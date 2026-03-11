@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cyber-blue: #8b8898;
+  --color-cyber-cyan: #ffffff;
+  --color-cyber-dark: #0d0b14;
+  --color-cyber-card: rgba(30, 28, 41, 0.6);
+  --color-cyber-border: rgba(255, 255, 255, 0.08);
+  --color-cyber-alert: #ff4d4f;
+  --color-cyber-success: #52c41a;
+  --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-glow-strong: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+
+body {
+  background: radial-gradient(circle at 15% 50%, #2a263d 0%, #0d0b14 60%);
+  color: #ffffff;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(30, 28, 41, 0.6) 0%, rgba(20, 18, 28, 0.6) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.scroll-hide::-webkit-scrollbar {
+  width: 4px;
+}
+.scroll-hide::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+}
+.animate-glow { animation: pulse-glow 2s infinite ease-in-out; }
+
+/* Isometric Grid and Node Styles */
+.iso-container {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.iso-grid {
+  transform: rotateX(55deg) rotateZ(-45deg);
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  width: 1000px;
+  height: 1000px;
+  position: absolute;
+  top: -200px;
+  left: -100px;
+}
+
+.iso-node {
+  position: absolute;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.cube {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.cube div {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* Node side colors based on status */
+.cube-success .face { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.15); }
+.cube-success .top { background: rgba(255, 255, 255, 0.1); }
+
+.cube-alert .face { background: rgba(255, 77, 79, 0.15); border-color: rgba(255, 77, 79, 0.3); }
+.cube-alert .top { background: rgba(255, 77, 79, 0.25); }
+
+.cube-normal .face { background: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.05); }
+.cube-normal .top { background: rgba(255, 255, 255, 0.05); }
+
+.cube .front  { transform: rotateY(0deg) translateZ(20px); }
+.cube .back   { transform: rotateY(180deg) translateZ(20px); }
+.cube .right  { transform: rotateY(90deg) translateZ(20px); }
+.cube .left   { transform: rotateY(-90deg) translateZ(20px); }
+.cube .top    { transform: rotateX(90deg) translateZ(20px); }
+.cube .bottom { transform: rotateX(-90deg) translateZ(20px); }
+
+.glowing-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: dash 5s linear infinite;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.3));
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.node-label {
+  transform: rotateZ(45deg) rotateX(-55deg);
+  white-space: nowrap;
+  font-size: 11px;
+  color: #ffffff;
+  font-weight: 500;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
