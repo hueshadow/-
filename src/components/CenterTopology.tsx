@@ -3,7 +3,78 @@ import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import { Activity } from 'lucide-react';
 
-const iconSvg = 'image://data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTYwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0idG9wIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzRhOGRmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxZTVmZTUiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxlZnQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWU1ZmU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzBhMmE3YSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icmlnaHQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMmQ3M2Y1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzEwM2I5ZSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPGVsbGlwc2UgY3g9IjUwIiBjeT0iMTQwIiByeD0iMzAiIHJ5PSIxMiIgZmlsbD0icmdiYSgwLCAyNTUsIDI1NSwgMC4xNSkiLz4KICA8ZWxsaXBzZSBjeD0iNTAiIGN5PSIxNDAiIHJ4PSIxNSIgcnk9IjYiIGZpbGw9InJnYmEoMCwgMjU1LCAyNTUsIDAuNCkiLz4KICA8ZWxsaXBzZSBjeD0iNTAiIGN5PSIxNDAiIHJ4PSI1IiByeT0iMiIgZmlsbD0icmdiYSgwLCAyNTUsIDI1NSwgMC44KSIvPgogIDxsaW5lIHgxPSI1MCIgeTE9IjkwIiB4Mj0iNTAiIHkyPSIxNDAiIHN0cm9rZT0iIzAwZmZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjMsMyIgb3BhY2l0eT0iMC42Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSI1MCwxNSA5MCwzMCA1MCw0NSAxMCwzMCIgZmlsbD0idXJsKCN0b3ApIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxMCwzMCA1MCw0NSA1MCw2NSAxMCw1MCIgZmlsbD0idXJsKCNsZWZ0KSIvPgogIDxwb2x5Z29uIHBvaW50cz0iNTAsNDUgOTAsMzAgOTAsNTAgNTAsNjUiIGZpbGw9InVybCgjcmlnaHQpIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxMCw1NSA1MCw3MCA5MCw1NSA1MCw0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDBmZmZmIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC42Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNSw2MCA1MCw3MyA1MCw5MCIgZmlsbD0idXJsKCNsZWZ0KSIvPgogIDxwb2x5Z29uIHBvaW50cz0iNTAsNzMgODUsNjAgNTAsOTAiIGZpbGw9InVybCgjcmlnaHQpIi8+Cjwvc3ZnPg==';
+const createIsometricNode = (color: 'blue' | 'red' | 'green', icon: 'server' | 'router') => {
+  const isRed = color === 'red';
+  const isGreen = color === 'green';
+  
+  const baseStroke = isRed ? '#ff4d4f' : isGreen ? '#52c41a' : '#00ffff';
+  const baseTop = isRed ? '#5c0011' : isGreen ? '#092b00' : '#002347';
+  const baseLeft = isRed ? '#3f000a' : isGreen ? '#051c00' : '#001328';
+  const baseRight = isRed ? '#2a0006' : isGreen ? '#020e00' : '#000b18';
+
+  const topStroke = isRed ? '#ff7875' : isGreen ? '#73d13d' : '#40a9ff';
+  const topTop = isRed ? '#a8071a' : isGreen ? '#237804' : '#0050b3';
+  const topLeft = isRed ? '#820014' : isGreen ? '#135200' : '#003a8c';
+  const topRight = isRed ? '#5c0011' : isGreen ? '#092b00' : '#002766';
+
+  const iconColorTop = isRed ? '#ffc069' : isGreen ? '#95de64' : '#69c0ff';
+  const iconColorLeft = isRed ? '#fa8c16' : isGreen ? '#5b8c00' : '#1890ff';
+  const iconColorRight = isRed ? '#d46b08' : isGreen ? '#3f6600' : '#096dd9';
+
+  let iconSvg = '';
+  if (icon === 'server') {
+    iconSvg = `
+      <!-- Server Icon -->
+      <polygon points="100,55 130,70 100,85 70,70" fill="${iconColorTop}" />
+      <polygon points="70,70 100,85 100,125 70,110" fill="${iconColorLeft}" />
+      <polygon points="130,70 100,85 100,125 130,110" fill="${iconColorRight}" />
+      <!-- Server slots -->
+      <line x1="76" y1="84" x2="94" y2="93" stroke="#fff" stroke-width="2" opacity="0.6"/>
+      <line x1="76" y1="94" x2="94" y2="103" stroke="#fff" stroke-width="2" opacity="0.6"/>
+      <line x1="76" y1="104" x2="94" y2="113" stroke="#fff" stroke-width="2" opacity="0.6"/>
+      
+      <line x1="124" y1="84" x2="106" y2="93" stroke="#fff" stroke-width="2" opacity="0.6"/>
+      <line x1="124" y1="94" x2="106" y2="103" stroke="#fff" stroke-width="2" opacity="0.6"/>
+      <line x1="124" y1="104" x2="106" y2="113" stroke="#fff" stroke-width="2" opacity="0.6"/>
+    `;
+  } else {
+    // Router icon
+    iconSvg = `
+      <!-- Router Icon -->
+      <polygon points="100,75 140,95 100,115 60,95" fill="${iconColorTop}" />
+      <polygon points="60,95 100,115 100,125 60,105" fill="${iconColorLeft}" />
+      <polygon points="140,95 100,115 100,125 140,105" fill="${iconColorRight}" />
+      <!-- Antennas -->
+      <line x1="70" y1="100" x2="70" y2="50" stroke="${iconColorTop}" stroke-width="4" stroke-linecap="round"/>
+      <line x1="130" y1="100" x2="130" y2="50" stroke="${iconColorTop}" stroke-width="4" stroke-linecap="round"/>
+      <!-- Antenna tips -->
+      <circle cx="70" cy="50" r="3" fill="#fff" opacity="0.8"/>
+      <circle cx="130" cy="50" r="3" fill="#fff" opacity="0.8"/>
+    `;
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 230">
+    <!-- Base Tier -->
+    <polygon points="100,130 180,170 100,210 20,170" fill="${baseTop}" stroke="${baseStroke}" stroke-width="2"/>
+    <polygon points="20,170 100,210 100,225 20,185" fill="${baseLeft}" />
+    <polygon points="180,170 100,210 100,225 180,185" fill="${baseRight}" />
+    
+    <!-- Top Tier -->
+    <polygon points="100,110 160,140 100,170 40,140" fill="${topTop}" stroke="${topStroke}" stroke-width="1.5"/>
+    <polygon points="40,140 100,170 100,180 40,150" fill="${topLeft}" />
+    <polygon points="160,140 100,170 100,180 160,150" fill="${topRight}" />
+    
+    ${iconSvg}
+  </svg>`;
+
+  return `image://data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
+const blueServer = createIsometricNode('blue', 'server');
+const blueRouter = createIsometricNode('blue', 'router');
+const redServer = createIsometricNode('red', 'server');
+const redRouter = createIsometricNode('red', 'router');
+const greenServer = createIsometricNode('green', 'server');
 
 export default function CenterTopology() {
   const [geoJsonLoaded, setGeoJsonLoaded] = useState(false);
@@ -29,67 +100,67 @@ export default function CenterTopology() {
   const getOption = () => {
     const nodesData = [
       // Top Level
-      { name: '南京汇聚', value: [118.7969, 32.0603], symbolSize: 18 },
-      { name: '江都集控中心', value: [119.5532, 32.4255], symbolSize: 18 },
+      { name: '南京汇聚', value: [118.7969, 32.0603], symbol: blueRouter, symbolSize: 22 },
+      { name: '江都集控中心', value: [119.5532, 32.4255], symbol: blueRouter, symbolSize: 22 },
       // Mid Level
-      { name: '宿迁汇聚', value: [118.2751, 33.9630], symbolSize: 14 },
-      { name: '徐州汇聚\n10.32.61.13', value: [117.1848, 34.2617], symbolSize: 14 },
-      { name: '淮安汇聚\n10.32.62.101', value: [119.0153, 33.6103], symbolSize: 14 },
-      { name: '扬州汇聚\n10.32.67.73', value: [119.3129, 32.2942], symbolSize: 14 },
+      { name: '宿迁汇聚', value: [118.2751, 33.9630], symbol: blueServer, symbolSize: 18 },
+      { name: '徐州汇聚\n10.32.61.13', value: [117.1848, 34.2617], symbol: redServer, symbolSize: 18 },
+      { name: '淮安汇聚\n10.32.62.101', value: [119.0153, 33.6103], symbol: blueServer, symbolSize: 18 },
+      { name: '扬州汇聚\n10.32.67.73', value: [119.3129, 32.2942], symbol: greenServer, symbolSize: 18 },
       // Bottom Level - Suqian
-      { name: '皂河站', value: [118.10, 34.20], symbolSize: 10 },
-      { name: '泗洪站', value: [118.20, 33.50], symbolSize: 10 },
-      { name: '睢宁二站', value: [117.90, 33.90], symbolSize: 10 },
-      { name: '宿迁一站', value: [118.30, 34.10], symbolSize: 10 },
-      { name: '宿迁二站', value: [118.40, 33.80], symbolSize: 10 },
-      { name: '宿迁三站', value: [118.15, 33.70], symbolSize: 10 },
+      { name: '皂河站', value: [118.10, 34.20], symbol: blueServer, symbolSize: 14 },
+      { name: '泗洪站', value: [118.20, 33.50], symbol: redRouter, symbolSize: 14 },
+      { name: '睢宁二站', value: [117.90, 33.90], symbol: blueServer, symbolSize: 14 },
+      { name: '宿迁一站', value: [118.30, 34.10], symbol: blueServer, symbolSize: 14 },
+      { name: '宿迁二站', value: [118.40, 33.80], symbol: blueServer, symbolSize: 14 },
+      { name: '宿迁三站', value: [118.15, 33.70], symbol: blueServer, symbolSize: 14 },
       // Bottom Level - Xuzhou
-      { name: '邳州站', value: [117.90, 34.30], symbolSize: 10 },
-      { name: '新沂站', value: [118.30, 34.40], symbolSize: 10 },
-      { name: '徐州一站', value: [117.20, 34.50], symbolSize: 10 },
-      { name: '徐州二站', value: [117.30, 34.10], symbolSize: 10 },
-      { name: '徐州三站', value: [117.00, 34.00], symbolSize: 10 },
+      { name: '邳州站', value: [117.90, 34.30], symbol: redServer, symbolSize: 14 },
+      { name: '新沂站', value: [118.30, 34.40], symbol: redServer, symbolSize: 14 },
+      { name: '徐州一站', value: [117.20, 34.50], symbol: redServer, symbolSize: 14 },
+      { name: '徐州二站', value: [117.30, 34.10], symbol: redServer, symbolSize: 14 },
+      { name: '徐州三站', value: [117.00, 34.00], symbol: redServer, symbolSize: 14 },
       // Bottom Level - Huaian
-      { name: '淮安一站', value: [119.10, 33.80], symbolSize: 10 },
-      { name: '淮安二站', value: [119.20, 33.50], symbolSize: 10 },
-      { name: '淮安三站', value: [118.90, 33.40], symbolSize: 10 },
-      { name: '淮安四站', value: [118.80, 33.70], symbolSize: 10 },
+      { name: '淮安一站', value: [119.10, 33.80], symbol: blueServer, symbolSize: 14 },
+      { name: '淮安二站', value: [119.20, 33.50], symbol: blueServer, symbolSize: 14 },
+      { name: '淮安三站', value: [118.90, 33.40], symbol: blueServer, symbolSize: 14 },
+      { name: '淮安四站', value: [118.80, 33.70], symbol: blueServer, symbolSize: 14 },
       // Bottom Level - Yangzhou
-      { name: '扬州一站', value: [119.40, 32.50], symbolSize: 10 },
-      { name: '扬州二站', value: [119.50, 32.20], symbolSize: 10 },
-      { name: '扬州三站', value: [119.20, 32.10], symbolSize: 10 },
-      { name: '扬州四站', value: [119.10, 32.40], symbolSize: 10 },
+      { name: '扬州一站', value: [119.40, 32.50], symbol: greenServer, symbolSize: 14 },
+      { name: '扬州二站', value: [119.50, 32.20], symbol: greenServer, symbolSize: 14 },
+      { name: '扬州三站', value: [119.20, 32.10], symbol: greenServer, symbolSize: 14 },
+      { name: '扬州四站', value: [119.10, 32.40], symbol: greenServer, symbolSize: 14 },
     ];
 
     const linesData = [
       // Top to Mid
-      { coords: [[118.7969, 32.0603], [118.2751, 33.9630]] }, // Nanjing -> Suqian
-      { coords: [[118.7969, 32.0603], [117.1848, 34.2617]] }, // Nanjing -> Xuzhou
-      { coords: [[119.5532, 32.4255], [119.0153, 33.6103]] }, // Jiangdu -> Huaian
-      { coords: [[119.5532, 32.4255], [119.3129, 32.2942]] }, // Jiangdu -> Yangzhou
+      { coords: [[118.7969, 32.0603], [118.2751, 33.9630]], lineStyle: { color: '#00ffff' } },
+      { coords: [[118.7969, 32.0603], [117.1848, 34.2617]], lineStyle: { color: '#ff4d4f' } },
+      { coords: [[119.5532, 32.4255], [119.0153, 33.6103]], lineStyle: { color: '#00ffff' } },
+      { coords: [[119.5532, 32.4255], [119.3129, 32.2942]], lineStyle: { color: '#52c41a' } },
       // Mid to Bottom - Suqian
-      { coords: [[118.2751, 33.9630], [118.10, 34.20]] },
-      { coords: [[118.2751, 33.9630], [118.20, 33.50]] },
-      { coords: [[118.2751, 33.9630], [117.90, 33.90]] },
-      { coords: [[118.2751, 33.9630], [118.30, 34.10]] },
-      { coords: [[118.2751, 33.9630], [118.40, 33.80]] },
-      { coords: [[118.2751, 33.9630], [118.15, 33.70]] },
-      // Mid to Bottom - Xuzhou
-      { coords: [[117.1848, 34.2617], [117.90, 34.30]] },
-      { coords: [[117.1848, 34.2617], [118.30, 34.40]] },
-      { coords: [[117.1848, 34.2617], [117.20, 34.50]] },
-      { coords: [[117.1848, 34.2617], [117.30, 34.10]] },
-      { coords: [[117.1848, 34.2617], [117.00, 34.00]] },
+      { coords: [[118.2751, 33.9630], [118.10, 34.20]], lineStyle: { color: '#00ffff' } },
+      { coords: [[118.2751, 33.9630], [118.20, 33.50]], lineStyle: { color: '#ff4d4f' } },
+      { coords: [[118.2751, 33.9630], [117.90, 33.90]], lineStyle: { color: '#00ffff' } },
+      { coords: [[118.2751, 33.9630], [118.30, 34.10]], lineStyle: { color: '#00ffff' } },
+      { coords: [[118.2751, 33.9630], [118.40, 33.80]], lineStyle: { color: '#00ffff' } },
+      { coords: [[118.2751, 33.9630], [118.15, 33.70]], lineStyle: { color: '#00ffff' } },
+      // Mid to Bottom - Xuzhou (Red)
+      { coords: [[117.1848, 34.2617], [117.90, 34.30]], lineStyle: { color: '#ff4d4f' } },
+      { coords: [[117.1848, 34.2617], [118.30, 34.40]], lineStyle: { color: '#ff4d4f' } },
+      { coords: [[117.1848, 34.2617], [117.20, 34.50]], lineStyle: { color: '#ff4d4f' } },
+      { coords: [[117.1848, 34.2617], [117.30, 34.10]], lineStyle: { color: '#ff4d4f' } },
+      { coords: [[117.1848, 34.2617], [117.00, 34.00]], lineStyle: { color: '#ff4d4f' } },
       // Mid to Bottom - Huaian
-      { coords: [[119.0153, 33.6103], [119.10, 33.80]] },
-      { coords: [[119.0153, 33.6103], [119.20, 33.50]] },
-      { coords: [[119.0153, 33.6103], [118.90, 33.40]] },
-      { coords: [[119.0153, 33.6103], [118.80, 33.70]] },
-      // Mid to Bottom - Yangzhou
-      { coords: [[119.3129, 32.2942], [119.40, 32.50]] },
-      { coords: [[119.3129, 32.2942], [119.50, 32.20]] },
-      { coords: [[119.3129, 32.2942], [119.20, 32.10]] },
-      { coords: [[119.3129, 32.2942], [119.10, 32.40]] },
+      { coords: [[119.0153, 33.6103], [119.10, 33.80]], lineStyle: { color: '#00ffff' } },
+      { coords: [[119.0153, 33.6103], [119.20, 33.50]], lineStyle: { color: '#00ffff' } },
+      { coords: [[119.0153, 33.6103], [118.90, 33.40]], lineStyle: { color: '#00ffff' } },
+      { coords: [[119.0153, 33.6103], [118.80, 33.70]], lineStyle: { color: '#00ffff' } },
+      // Mid to Bottom - Yangzhou (Green)
+      { coords: [[119.3129, 32.2942], [119.40, 32.50]], lineStyle: { color: '#52c41a' } },
+      { coords: [[119.3129, 32.2942], [119.50, 32.20]], lineStyle: { color: '#52c41a' } },
+      { coords: [[119.3129, 32.2942], [119.20, 32.10]], lineStyle: { color: '#52c41a' } },
+      { coords: [[119.3129, 32.2942], [119.10, 32.40]], lineStyle: { color: '#52c41a' } },
     ];
 
     return {
@@ -139,16 +210,19 @@ export default function CenterTopology() {
             show: true,
             period: 4,
             trailLength: 0.2,
-            color: '#00ff88',
             symbolSize: 3
           },
           lineStyle: {
-            color: '#00ff88',
             width: 0, // Hide the base line, only show the effect
             opacity: 0,
             curveness: 0.1
           },
-          data: linesData
+          data: linesData.map(item => ({
+            ...item,
+            effect: {
+              color: item.lineStyle.color // Match particle color to line color
+            }
+          }))
         },
         // Nodes
         {
@@ -157,21 +231,20 @@ export default function CenterTopology() {
           coordinateSystem: 'geo',
           zlevel: 3,
           silent: true, // Disable hover/click events
-          symbol: iconSvg,
-          symbolSize: (val: any, params: any) => params.data.symbolSize * 3.5,
-          symbolOffset: [0, '-35%'],
+          symbolSize: (val: any, params: any) => params.data.symbolSize * 12,
+          symbolOffset: [0, '-25%'],
           itemStyle: {
             shadowBlur: 10,
-            shadowColor: '#00ffff'
+            shadowColor: 'rgba(0,0,0,0.5)'
           },
           label: {
             show: true,
             formatter: '{b}',
-            position: 'top',
+            position: 'bottom',
             color: '#ffffff',
             fontSize: 11,
             fontWeight: 'bold',
-            distance: 0,
+            distance: 5,
             textShadowColor: '#000',
             textShadowBlur: 4
           },
