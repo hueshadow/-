@@ -7,7 +7,6 @@ import Header from './components/Header';
 import LeftSidebar from './components/LeftSidebar';
 import CenterTopology from './components/CenterTopology';
 import RightSidebar from './components/RightSidebar';
-import Footer from './components/Footer';
 
 export default function App() {
   return (
@@ -16,17 +15,14 @@ export default function App() {
         <Header />
       </div>
       <main className="flex-1 flex justify-between gap-4 min-h-0 relative z-10 pointer-events-none">
-        <div className="relative z-10 flex flex-col gap-4 shrink-0 pointer-events-auto">
+        <div className="relative z-10 flex flex-col justify-end gap-4 shrink-0 pointer-events-auto">
           <LeftSidebar />
         </div>
         <CenterTopology />
-        <div className="relative z-10 flex flex-col gap-4 shrink-0 pointer-events-auto">
+        <div className="relative z-10 flex flex-col gap-4 shrink-0 pointer-events-auto ml-auto">
           <RightSidebar />
         </div>
       </main>
-      <div className="relative z-50">
-        <Footer />
-      </div>
     </div>
   );
 }

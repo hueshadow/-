@@ -1,290 +1,496 @@
-import React, { useEffect, useState } from 'react';
-import ReactECharts from 'echarts-for-react';
-import * as echarts from 'echarts';
+import React, { useState, useEffect, useRef } from 'react';
 import { Activity } from 'lucide-react';
 
-const createIsometricNode = (color: 'blue' | 'red' | 'green', icon: 'server' | 'router') => {
-  const isRed = color === 'red';
-  const isGreen = color === 'green';
-  
-  const baseStroke = isRed ? '#ff4d4f' : isGreen ? '#52c41a' : '#00ffff';
-  const baseTop = isRed ? '#5c0011' : isGreen ? '#092b00' : '#002347';
-  const baseLeft = isRed ? '#3f000a' : isGreen ? '#051c00' : '#001328';
-  const baseRight = isRed ? '#2a0006' : isGreen ? '#020e00' : '#000b18';
-
-  const topStroke = isRed ? '#ff7875' : isGreen ? '#73d13d' : '#40a9ff';
-  const topTop = isRed ? '#a8071a' : isGreen ? '#237804' : '#0050b3';
-  const topLeft = isRed ? '#820014' : isGreen ? '#135200' : '#003a8c';
-  const topRight = isRed ? '#5c0011' : isGreen ? '#092b00' : '#002766';
-
-  const iconColorTop = isRed ? '#ffc069' : isGreen ? '#95de64' : '#69c0ff';
-  const iconColorLeft = isRed ? '#fa8c16' : isGreen ? '#5b8c00' : '#1890ff';
-  const iconColorRight = isRed ? '#d46b08' : isGreen ? '#3f6600' : '#096dd9';
-
-  let iconSvg = '';
-  if (icon === 'server') {
-    iconSvg = `
-      <!-- Server Icon -->
-      <polygon points="100,55 130,70 100,85 70,70" fill="${iconColorTop}" />
-      <polygon points="70,70 100,85 100,125 70,110" fill="${iconColorLeft}" />
-      <polygon points="130,70 100,85 100,125 130,110" fill="${iconColorRight}" />
-      <!-- Server slots -->
-      <line x1="76" y1="84" x2="94" y2="93" stroke="#fff" stroke-width="2" opacity="0.6"/>
-      <line x1="76" y1="94" x2="94" y2="103" stroke="#fff" stroke-width="2" opacity="0.6"/>
-      <line x1="76" y1="104" x2="94" y2="113" stroke="#fff" stroke-width="2" opacity="0.6"/>
-      
-      <line x1="124" y1="84" x2="106" y2="93" stroke="#fff" stroke-width="2" opacity="0.6"/>
-      <line x1="124" y1="94" x2="106" y2="103" stroke="#fff" stroke-width="2" opacity="0.6"/>
-      <line x1="124" y1="104" x2="106" y2="113" stroke="#fff" stroke-width="2" opacity="0.6"/>
-    `;
-  } else {
-    // Router icon
-    iconSvg = `
-      <!-- Router Icon -->
-      <polygon points="100,75 140,95 100,115 60,95" fill="${iconColorTop}" />
-      <polygon points="60,95 100,115 100,125 60,105" fill="${iconColorLeft}" />
-      <polygon points="140,95 100,115 100,125 140,105" fill="${iconColorRight}" />
-      <!-- Antennas -->
-      <line x1="70" y1="100" x2="70" y2="50" stroke="${iconColorTop}" stroke-width="4" stroke-linecap="round"/>
-      <line x1="130" y1="100" x2="130" y2="50" stroke="${iconColorTop}" stroke-width="4" stroke-linecap="round"/>
-      <!-- Antenna tips -->
-      <circle cx="70" cy="50" r="3" fill="#fff" opacity="0.8"/>
-      <circle cx="130" cy="50" r="3" fill="#fff" opacity="0.8"/>
-    `;
-  }
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 230">
-    <!-- Base Tier -->
-    <polygon points="100,130 180,170 100,210 20,170" fill="${baseTop}" stroke="${baseStroke}" stroke-width="2"/>
-    <polygon points="20,170 100,210 100,225 20,185" fill="${baseLeft}" />
-    <polygon points="180,170 100,210 100,225 180,185" fill="${baseRight}" />
-    
-    <!-- Top Tier -->
-    <polygon points="100,110 160,140 100,170 40,140" fill="${topTop}" stroke="${topStroke}" stroke-width="1.5"/>
-    <polygon points="40,140 100,170 100,180 40,150" fill="${topLeft}" />
-    <polygon points="160,140 100,170 100,180 160,150" fill="${topRight}" />
-    
-    ${iconSvg}
-  </svg>`;
-
-  return `image://data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+// Helper to draw an isometric cube
+const drawIsoBox = (cx: number, cy: number, w: number, d: number, h: number, colors: {top: string, left: string, right: string}, stroke?: string, opacity: number = 1) => {
+  const strokeAttr = stroke ? `stroke="${stroke}" stroke-width="0.5"` : '';
+  return `
+    <g opacity="${opacity}">
+      <!-- Left Face -->
+      <path d="M ${cx} ${cy} L ${cx - w} ${cy - w*0.5} L ${cx - w} ${cy - w*0.5 - h} L ${cx} ${cy - h} Z" fill="${colors.left}" ${strokeAttr} />
+      <!-- Right Face -->
+      <path d="M ${cx} ${cy} L ${cx + d} ${cy - d*0.5} L ${cx + d} ${cy - d*0.5 - h} L ${cx} ${cy - h} Z" fill="${colors.right}" ${strokeAttr} />
+      <!-- Top Face -->
+      <path d="M ${cx} ${cy - h} L ${cx - w} ${cy - w*0.5 - h} L ${cx - w + d} ${cy - (w+d)*0.5 - h} L ${cx + d} ${cy - d*0.5 - h} Z" fill="${colors.top}" ${strokeAttr} />
+    </g>
+  `;
 };
 
-const blueServer = createIsometricNode('blue', 'server');
-const blueRouter = createIsometricNode('blue', 'router');
-const redServer = createIsometricNode('red', 'server');
-const redRouter = createIsometricNode('red', 'router');
-const greenServer = createIsometricNode('green', 'server');
+const createLargeNodeSVG = () => {
+  const cx = 100;
+  const cy = 160;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">`;
+  
+  // Shadow
+  svg += `<path d="M 100 180 L 30 145 L 100 110 L 170 145 Z" fill="#000000" opacity="0.3" filter="blur(8px)" />`;
+  
+  // Base Glow
+  svg += `<path d="M 100 165 L 40 135 L 100 105 L 160 135 Z" fill="none" stroke="#00ff00" stroke-width="6" filter="blur(4px)" opacity="0.8" />`;
+  svg += `<path d="M 100 165 L 40 135 L 100 105 L 160 135 Z" fill="none" stroke="#00ff00" stroke-width="2" />`;
+  
+  // Base Top
+  svg += `<path d="M 100 155 L 40 125 L 100 95 L 160 125 Z" fill="rgba(100, 255, 150, 0.4)" stroke="#8affb1" stroke-width="1" />`;
+  // Base Sides
+  svg += `<path d="M 40 125 L 40 135 L 100 165 L 100 155 Z" fill="rgba(50, 200, 100, 0.6)" />`;
+  svg += `<path d="M 100 155 L 100 165 L 160 135 L 160 125 Z" fill="rgba(20, 150, 80, 0.6)" />`;
+
+  // Rack drawing function
+  const drawRack = (rcx: number, rcy: number) => {
+    let rSvg = '';
+    // Back glass
+    rSvg += drawIsoBox(rcx, rcy, 25, 45, 90, {top: 'transparent', left: 'rgba(200,220,255,0.1)', right: 'rgba(200,220,255,0.05)'}, '#94a3b8', 1);
+    
+    // Servers
+    for (let i = 0; i < 4; i++) {
+      const scy = rcy - 10 - i * 20;
+      // Server Box
+      rSvg += drawIsoBox(rcx, scy, 23, 43, 12, {top: '#38bdf8', left: '#0284c7', right: '#0369a1'});
+      // Details
+      rSvg += `<path d="M ${rcx + 5} ${scy - 2.5} L ${rcx + 15} ${scy - 7.5} L ${rcx + 15} ${scy - 7.5 - 6} L ${rcx + 5} ${scy - 2.5 - 6} Z" fill="#0ea5e9" />`;
+      rSvg += `<circle cx="${rcx + 25}" cy="${scy - 7.5}" r="1.5" fill="#4ade80" />`;
+      rSvg += `<circle cx="${rcx + 30}" cy="${scy - 10}" r="1.5" fill="#4ade80" />`;
+      rSvg += `<circle cx="${rcx + 35}" cy="${scy - 12.5}" r="1.5" fill="#4ade80" />`;
+    }
+    
+    // Front Glass
+    rSvg += `<path d="M ${rcx} ${rcy} L ${rcx - 25} ${rcy - 12.5} L ${rcx - 25} ${rcy - 12.5 - 90} L ${rcx} ${rcy - 90} Z" fill="rgba(200,220,255,0.15)" stroke="#94a3b8" stroke-width="0.5" />`;
+    rSvg += `<path d="M ${rcx} ${rcy} L ${rcx + 45} ${rcy - 22.5} L ${rcx + 45} ${rcy - 22.5 - 90} L ${rcx} ${rcy - 90} Z" fill="rgba(200,220,255,0.05)" stroke="#94a3b8" stroke-width="0.5" />`;
+    rSvg += `<path d="M ${rcx} ${rcy - 90} L ${rcx - 25} ${rcy - 12.5 - 90} L ${rcx - 25 + 45} ${rcy - 35 - 90} L ${rcx + 45} ${rcy - 22.5 - 90} Z" fill="rgba(200,220,255,0.2)" stroke="#94a3b8" stroke-width="0.5" />`;
+    
+    // Edges
+    rSvg += `<path d="M ${rcx} ${rcy} L ${rcx} ${rcy - 90}" stroke="#94a3b8" stroke-width="1" />`;
+    rSvg += `<path d="M ${rcx - 25} ${rcy - 12.5} L ${rcx - 25} ${rcy - 12.5 - 90}" stroke="#94a3b8" stroke-width="1" />`;
+    rSvg += `<path d="M ${rcx + 45} ${rcy - 22.5} L ${rcx + 45} ${rcy - 22.5 - 90}" stroke="#94a3b8" stroke-width="1" />`;
+    
+    return rSvg;
+  };
+
+  // Left Rack
+  svg += drawRack(cx - 15, cy - 15);
+  // Right Rack
+  svg += drawRack(cx + 15, cy + 5);
+  
+  svg += `</svg>`;
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+};
+
+const createMediumNodeSVG = () => {
+  const cx = 100;
+  const cy = 160;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">`;
+  
+  // Shadow
+  svg += `<path d="M 100 180 L 50 155 L 100 130 L 150 155 Z" fill="#000000" opacity="0.3" filter="blur(8px)" />`;
+  
+  // Base Glow
+  svg += `<path d="M 100 165 L 60 145 L 100 125 L 140 145 Z" fill="none" stroke="#00ff00" stroke-width="6" filter="blur(4px)" opacity="0.8" />`;
+  svg += `<path d="M 100 165 L 60 145 L 100 125 L 140 145 Z" fill="none" stroke="#00ff00" stroke-width="2" />`;
+  
+  // Base Top
+  svg += `<path d="M 100 155 L 60 135 L 100 115 L 140 135 Z" fill="rgba(100, 255, 150, 0.4)" stroke="#8affb1" stroke-width="1" />`;
+  // Base Sides
+  svg += `<path d="M 60 135 L 60 145 L 100 165 L 100 155 Z" fill="rgba(50, 200, 100, 0.6)" />`;
+  svg += `<path d="M 100 155 L 100 165 L 140 145 L 140 135 Z" fill="rgba(20, 150, 80, 0.6)" />`;
+
+  // Body (Dark Grey)
+  svg += drawIsoBox(cx, cy - 10, 35, 35, 50, {top: '#475569', left: '#334155', right: '#1e293b'});
+  
+  // Vertical Blue Glass Panels on Right Face
+  for (let i = 0; i < 3; i++) {
+    const px = cx + 5 + i * 10;
+    const py = cy - 10 - 2.5 - i * 5;
+    svg += `<path d="M ${px} ${py} L ${px + 5} ${py - 2.5} L ${px + 5} ${py - 2.5 - 40} L ${px} ${py - 40} Z" fill="#0ea5e9" opacity="0.8" />`;
+    svg += `<path d="M ${px} ${py} L ${px + 5} ${py - 2.5} L ${px + 5} ${py - 2.5 - 40} L ${px} ${py - 40} Z" fill="none" stroke="#38bdf8" stroke-width="0.5" />`;
+  }
+  
+  // Top Section (Blue)
+  const topCy = cy - 10 - 50;
+  svg += drawIsoBox(cx, topCy, 35, 35, 20, {top: '#38bdf8', left: '#0284c7', right: '#0369a1'});
+  
+  // Details on Blue Top (Right Face)
+  svg += `<path d="M ${cx + 5} ${topCy - 5} L ${cx + 30} ${topCy - 17.5}" stroke="#7dd3fc" stroke-width="1.5" stroke-dasharray="2 4" />`;
+  svg += `<path d="M ${cx + 5} ${topCy - 10} L ${cx + 30} ${topCy - 22.5}" stroke="#7dd3fc" stroke-width="1.5" stroke-dasharray="2 4" />`;
+  
+  svg += `</svg>`;
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+};
+
+const createSmallNodeSVG = () => {
+  const cx = 100;
+  const cy = 160;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">`;
+  
+  // Shadow
+  svg += `<path d="M 100 180 L 50 155 L 100 130 L 150 155 Z" fill="#000000" opacity="0.3" filter="blur(8px)" />`;
+  
+  // Base Glow
+  svg += `<path d="M 100 165 L 60 145 L 100 125 L 140 145 Z" fill="none" stroke="#00ff00" stroke-width="6" filter="blur(4px)" opacity="0.8" />`;
+  svg += `<path d="M 100 165 L 60 145 L 100 125 L 140 145 Z" fill="none" stroke="#00ff00" stroke-width="2" />`;
+  
+  // Base Top
+  svg += `<path d="M 100 155 L 60 135 L 100 115 L 140 135 Z" fill="rgba(100, 255, 150, 0.4)" stroke="#8affb1" stroke-width="1" />`;
+  // Base Sides
+  svg += `<path d="M 60 135 L 60 145 L 100 165 L 100 155 Z" fill="rgba(50, 200, 100, 0.6)" />`;
+  svg += `<path d="M 100 155 L 100 165 L 140 145 L 140 135 Z" fill="rgba(20, 150, 80, 0.6)" />`;
+
+  // Body Frame (Dark Grey)
+  svg += drawIsoBox(cx, cy - 10, 30, 30, 70, {top: '#475569', left: '#334155', right: '#1e293b'});
+  
+  // Left Face Blue Panel (Inset)
+  svg += `<path d="M ${cx - 2} ${cy - 10 - 5} L ${cx - 28} ${cy - 10 - 18} L ${cx - 28} ${cy - 10 - 18 - 60} L ${cx - 2} ${cy - 10 - 5 - 60} Z" fill="#0284c7" />`;
+  // Lines on left panel
+  svg += `<path d="M ${cx - 5} ${cy - 30} L ${cx - 25} ${cy - 40}" stroke="#38bdf8" stroke-width="1.5" />`;
+  svg += `<path d="M ${cx - 5} ${cy - 40} L ${cx - 25} ${cy - 50}" stroke="#38bdf8" stroke-width="1.5" />`;
+  svg += `<path d="M ${cx - 5} ${cy - 50} L ${cx - 25} ${cy - 60}" stroke="#38bdf8" stroke-width="1.5" />`;
+  
+  // Right Face Blue Panel (Inset)
+  svg += `<path d="M ${cx + 2} ${cy - 10 - 5} L ${cx + 28} ${cy - 10 - 18} L ${cx + 28} ${cy - 10 - 18 - 60} L ${cx + 2} ${cy - 10 - 5 - 60} Z" fill="#0369a1" />`;
+  
+  // Dots on Right Panel
+  for (let i = 0; i < 6; i++) {
+    for (let j = 0; j < 3; j++) {
+      const px = cx + 6 + j * 7;
+      const py = cy - 25 - i * 9 - j * 3.5;
+      const isGreen = Math.random() > 0.8;
+      const isEmpty = Math.random() > 0.6;
+      if (!isEmpty) {
+        const color = isGreen ? '#4ade80' : '#7dd3fc';
+        svg += `<path d="M ${px} ${py} L ${px + 3} ${py - 1.5} L ${px + 3} ${py - 4.5} L ${px} ${py - 3} Z" fill="${color}" />`;
+      }
+    }
+  }
+  
+  // Top Grid Dots
+  const topCy = cy - 10 - 70;
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      const px = cx - 15 + i * 10 + j * 10;
+      const py = topCy - i * 5 + j * 5;
+      svg += `<circle cx="${px}" cy="${py}" r="1" fill="#94a3b8" />`;
+    }
+  }
+  
+  svg += `</svg>`;
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+};
+
+const largeNodeImg = createLargeNodeSVG();
+const mediumNodeImg = createMediumNodeSVG();
+const smallNodeImg = createSmallNodeSVG();
+
+// --- Isometric Grid Configuration ---
+const originX = 960;
+const originY = 150;
+const stepU_x = 110;
+const stepU_y = 55;
+const stepV_x = -110;
+const stepV_y = 55;
+
+const getXY = (u: number, v: number) => ({
+  x: originX + u * stepU_x + v * stepV_x,
+  y: originY + u * stepU_y + v * stepV_y
+});
+
+const nodesData = [
+  { id: 'nanjing', name: '南京汇聚', u: 1, v: 1, type: 'large' },
+  { id: 'jiangdu', name: '江都集控中心', u: 4, v: 1, type: 'large' },
+  
+  { id: 'suqian', name: '宿迁汇聚', u: 0, v: 3.5, type: 'medium' },
+  { id: 'xuzhou', name: '徐州汇聚', u: 2.5, v: 3.5, type: 'medium' },
+  { id: 'huaian', name: '淮安汇聚', u: 4.5, v: 3.5, type: 'medium' },
+  { id: 'yangzhou', name: '扬州汇聚', u: 7, v: 3.5, type: 'medium' },
+  
+  { id: 'zaohe', name: '皂河站', u: -3, v: 5, type: 'small' },
+  { id: 'sihong', name: '泗洪站', u: -1.5, v: 5, type: 'small' },
+  { id: 'siyang', name: '泗阳站', u: -2, v: 6.5, type: 'small' },
+  { id: 'suining2', name: '睢宁二站', u: -0.5, v: 5.5, type: 'small' },
+  { id: 'liulaojian', name: '刘老涧站', u: -0.5, v: 7, type: 'small' },
+  
+  { id: 'pizhou', name: '邳州站', u: 0.5, v: 9.5, type: 'small' },
+  { id: 'liushan', name: '刘山站', u: 2.5, v: 9.5, type: 'small' },
+  { id: 'jietai', name: '解台站', u: 1.5, v: 8, type: 'small' },
+  { id: 'linjiaba', name: '蔺家坝站', u: 3, v: 8, type: 'small' },
+  
+  { id: 'huaiyin3', name: '淮阴三站', u: 4, v: 5.5, type: 'small' },
+  { id: 'huaian4', name: '淮安四站', u: 5, v: 6.5, type: 'small' },
+  { id: 'hongze', name: '洪泽站', u: 5.5, v: 5.5, type: 'small' },
+  
+  { id: 'yangzhou_branch', name: '扬州分公司', u: 7.5, v: 6.5, type: 'small' },
+  { id: 'jinhu', name: '金湖站', u: 8, v: 7.5, type: 'small' },
+  { id: 'baoying', name: '宝应站', u: 8.5, v: 6.5, type: 'small' },
+];
+
+const pathsData = [
+  // Main horizontal trunk
+  { path: [[0, 3.5], [7, 3.5]], color: '#00ffff' },
+  
+  // Nanjing connection
+  { path: [[1, 1], [1, 2], [1.5, 2], [1.5, 3.5]], color: '#00ffff' },
+  
+  // Jiangdu connection
+  { path: [[4, 1], [4, 2], [5.5, 2], [5.5, 3.5]], color: '#00ffff' },
+  
+  // Suqian trunk & branches
+  { path: [[0, 3.5], [0, 7]], color: '#00ffff' },
+  { path: [[-3, 5], [0, 5]], color: '#00ffff' }, // Zaohe -> Sihong -> Trunk
+  { path: [[-2, 6.5], [0, 6.5]], color: '#00ffff' }, // Siyang -> Trunk
+  { path: [[-0.5, 5.5], [0, 5.5]], color: '#00ffff' }, // Suining 2 -> Trunk
+  { path: [[-0.5, 7], [0, 7]], color: '#00ffff' }, // Liulaojian -> Trunk
+  
+  // Xuzhou trunk & branches
+  { path: [[2.5, 3.5], [2.5, 9.5]], color: '#00ffff' },
+  { path: [[0.5, 9.5], [2.5, 9.5]], color: '#00ffff' }, // Pizhou -> Liushan
+  { path: [[1.5, 8], [3, 8]], color: '#00ffff' }, // Jietai -> Linjiaba
+  
+  // Huaian trunk & branches
+  { path: [[4.5, 3.5], [4.5, 6.5]], color: '#00ffff' },
+  { path: [[4, 5.5], [5.5, 5.5]], color: '#00ffff' }, // Huaiyin 3 -> Hongze
+  { path: [[4.5, 6.5], [5, 6.5]], color: '#00ffff' }, // Trunk -> Huaian 4
+  
+  // Yangzhou trunk & branches
+  { path: [[7, 3.5], [7, 7.5]], color: '#00ffff' },
+  { path: [[7, 6.5], [8.5, 6.5]], color: '#00ffff' }, // Trunk -> Yangzhou Branch -> Baoying
+  { path: [[7, 7.5], [8, 7.5]], color: '#00ffff' }, // Trunk -> Jinhu
+];
 
 export default function CenterTopology() {
-  const [geoJsonLoaded, setGeoJsonLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
+
+  const [nodes, setNodes] = useState(() =>
+    nodesData.map(n => ({ ...n, ...getXY(n.u, n.v) }))
+  );
+
+  const [paths, setPaths] = useState(() =>
+    pathsData.map(p => ({
+      ...p,
+      path: p.path.map(pt => {
+        const xy = getXY(pt[0], pt[1]);
+        const matchingNode = nodesData.find(n => Math.abs(n.u - pt[0]) < 0.01 && Math.abs(n.v - pt[1]) < 0.01);
+        return {
+          x: xy.x,
+          y: xy.y,
+          nodeId: matchingNode ? matchingNode.id : null
+        };
+      })
+    }))
+  );
+
+  const lastPointerRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    // Fetch China GeoJSON from a reliable CDN
-    fetch('https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/china.json')
-      .then(res => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then(data => {
-        echarts.registerMap('china', data);
-        setGeoJsonLoaded(true);
-      })
-      .catch(err => {
-        console.error('Failed to load map data:', err);
-        setError('地图数据加载失败，请检查网络连接或跨域设置。');
-      });
+    const handleResize = () => {
+      if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current.parentElement || document.body;
+        // Calculate scale to fit 1920x1080
+        const scaleX = clientWidth / 1920;
+        const scaleY = clientHeight / 1080;
+        setScale(Math.min(scaleX, scaleY) * 0.95); // 95% to leave some margin
+      }
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const getOption = () => {
-    const nodesData = [
-      // Top Level
-      { name: '南京汇聚', value: [118.7969, 32.0603], symbol: blueRouter, symbolSize: 22 },
-      { name: '江都集控中心', value: [119.5532, 32.4255], symbol: blueRouter, symbolSize: 22 },
-      // Mid Level
-      { name: '宿迁汇聚', value: [118.2751, 33.9630], symbol: blueServer, symbolSize: 18 },
-      { name: '徐州汇聚\n10.32.61.13', value: [117.1848, 34.2617], symbol: redServer, symbolSize: 18 },
-      { name: '淮安汇聚\n10.32.62.101', value: [119.0153, 33.6103], symbol: blueServer, symbolSize: 18 },
-      { name: '扬州汇聚\n10.32.67.73', value: [119.3129, 32.2942], symbol: greenServer, symbolSize: 18 },
-      // Bottom Level - Suqian
-      { name: '皂河站', value: [118.10, 34.20], symbol: blueServer, symbolSize: 14 },
-      { name: '泗洪站', value: [118.20, 33.50], symbol: redRouter, symbolSize: 14 },
-      { name: '睢宁二站', value: [117.90, 33.90], symbol: blueServer, symbolSize: 14 },
-      { name: '宿迁一站', value: [118.30, 34.10], symbol: blueServer, symbolSize: 14 },
-      { name: '宿迁二站', value: [118.40, 33.80], symbol: blueServer, symbolSize: 14 },
-      { name: '宿迁三站', value: [118.15, 33.70], symbol: blueServer, symbolSize: 14 },
-      // Bottom Level - Xuzhou
-      { name: '邳州站', value: [117.90, 34.30], symbol: redServer, symbolSize: 14 },
-      { name: '新沂站', value: [118.30, 34.40], symbol: redServer, symbolSize: 14 },
-      { name: '徐州一站', value: [117.20, 34.50], symbol: redServer, symbolSize: 14 },
-      { name: '徐州二站', value: [117.30, 34.10], symbol: redServer, symbolSize: 14 },
-      { name: '徐州三站', value: [117.00, 34.00], symbol: redServer, symbolSize: 14 },
-      // Bottom Level - Huaian
-      { name: '淮安一站', value: [119.10, 33.80], symbol: blueServer, symbolSize: 14 },
-      { name: '淮安二站', value: [119.20, 33.50], symbol: blueServer, symbolSize: 14 },
-      { name: '淮安三站', value: [118.90, 33.40], symbol: blueServer, symbolSize: 14 },
-      { name: '淮安四站', value: [118.80, 33.70], symbol: blueServer, symbolSize: 14 },
-      // Bottom Level - Yangzhou
-      { name: '扬州一站', value: [119.40, 32.50], symbol: greenServer, symbolSize: 14 },
-      { name: '扬州二站', value: [119.50, 32.20], symbol: greenServer, symbolSize: 14 },
-      { name: '扬州三站', value: [119.20, 32.10], symbol: greenServer, symbolSize: 14 },
-      { name: '扬州四站', value: [119.10, 32.40], symbol: greenServer, symbolSize: 14 },
-    ];
+  const handleBgPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    setIsPanning(true);
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
 
-    const linesData = [
-      // Top to Mid
-      { coords: [[118.7969, 32.0603], [118.2751, 33.9630]], lineStyle: { color: '#00ffff' } },
-      { coords: [[118.7969, 32.0603], [117.1848, 34.2617]], lineStyle: { color: '#ff4d4f' } },
-      { coords: [[119.5532, 32.4255], [119.0153, 33.6103]], lineStyle: { color: '#00ffff' } },
-      { coords: [[119.5532, 32.4255], [119.3129, 32.2942]], lineStyle: { color: '#52c41a' } },
-      // Mid to Bottom - Suqian
-      { coords: [[118.2751, 33.9630], [118.10, 34.20]], lineStyle: { color: '#00ffff' } },
-      { coords: [[118.2751, 33.9630], [118.20, 33.50]], lineStyle: { color: '#ff4d4f' } },
-      { coords: [[118.2751, 33.9630], [117.90, 33.90]], lineStyle: { color: '#00ffff' } },
-      { coords: [[118.2751, 33.9630], [118.30, 34.10]], lineStyle: { color: '#00ffff' } },
-      { coords: [[118.2751, 33.9630], [118.40, 33.80]], lineStyle: { color: '#00ffff' } },
-      { coords: [[118.2751, 33.9630], [118.15, 33.70]], lineStyle: { color: '#00ffff' } },
-      // Mid to Bottom - Xuzhou (Red)
-      { coords: [[117.1848, 34.2617], [117.90, 34.30]], lineStyle: { color: '#ff4d4f' } },
-      { coords: [[117.1848, 34.2617], [118.30, 34.40]], lineStyle: { color: '#ff4d4f' } },
-      { coords: [[117.1848, 34.2617], [117.20, 34.50]], lineStyle: { color: '#ff4d4f' } },
-      { coords: [[117.1848, 34.2617], [117.30, 34.10]], lineStyle: { color: '#ff4d4f' } },
-      { coords: [[117.1848, 34.2617], [117.00, 34.00]], lineStyle: { color: '#ff4d4f' } },
-      // Mid to Bottom - Huaian
-      { coords: [[119.0153, 33.6103], [119.10, 33.80]], lineStyle: { color: '#00ffff' } },
-      { coords: [[119.0153, 33.6103], [119.20, 33.50]], lineStyle: { color: '#00ffff' } },
-      { coords: [[119.0153, 33.6103], [118.90, 33.40]], lineStyle: { color: '#00ffff' } },
-      { coords: [[119.0153, 33.6103], [118.80, 33.70]], lineStyle: { color: '#00ffff' } },
-      // Mid to Bottom - Yangzhou (Green)
-      { coords: [[119.3129, 32.2942], [119.40, 32.50]], lineStyle: { color: '#52c41a' } },
-      { coords: [[119.3129, 32.2942], [119.50, 32.20]], lineStyle: { color: '#52c41a' } },
-      { coords: [[119.3129, 32.2942], [119.20, 32.10]], lineStyle: { color: '#52c41a' } },
-      { coords: [[119.3129, 32.2942], [119.10, 32.40]], lineStyle: { color: '#52c41a' } },
-    ];
+  const handleNodePointerDown = (e: React.PointerEvent, nodeId: string) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    e.stopPropagation();
+    setDraggedNodeId(nodeId);
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
 
-    return {
-      backgroundColor: 'transparent',
-      tooltip: {
-        show: false // Disable tooltip
-      },
-      geo: {
-        map: 'china',
-        roam: true, // Enable zoom and pan
-        silent: true, // Disable hover/click effects on the map regions
-        zoom: 7.5, // Increased zoom to fill more space
-        center: [119.4685, 33.0000], // Center of Jiangsu
-        top: '-10%', // Move map up to reach the very top
-        label: {
-          show: false,
-          color: '#8b8898'
-        },
-        itemStyle: {
-          areaColor: '#14121c',
-          borderColor: '#2a263d',
-          borderWidth: 1
-        }
-      },
-      series: [
-        // Static Lines
-        {
-          type: 'lines',
-          coordinateSystem: 'geo',
-          zlevel: 1,
-          silent: true, // Disable hover/click events
-          lineStyle: {
-            color: '#2a263d',
-            width: 1,
-            opacity: 0.6,
-            curveness: 0.1
-          },
-          data: linesData
-        },
-        // Animated Lines (Particles)
-        {
-          type: 'lines',
-          coordinateSystem: 'geo',
-          zlevel: 2,
-          silent: true, // Disable hover/click events
-          effect: {
-            show: true,
-            period: 4,
-            trailLength: 0.2,
-            symbolSize: 3
-          },
-          lineStyle: {
-            width: 0, // Hide the base line, only show the effect
-            opacity: 0,
-            curveness: 0.1
-          },
-          data: linesData.map(item => ({
-            ...item,
-            effect: {
-              color: item.lineStyle.color // Match particle color to line color
-            }
-          }))
-        },
-        // Nodes
-        {
-          name: '节点',
-          type: 'scatter',
-          coordinateSystem: 'geo',
-          zlevel: 3,
-          silent: true, // Disable hover/click events
-          symbolSize: (val: any, params: any) => params.data.symbolSize * 12,
-          symbolOffset: [0, '-25%'],
-          itemStyle: {
-            shadowBlur: 10,
-            shadowColor: 'rgba(0,0,0,0.5)'
-          },
-          label: {
-            show: true,
-            formatter: '{b}',
-            position: 'bottom',
-            color: '#ffffff',
-            fontSize: 11,
-            fontWeight: 'bold',
-            distance: 5,
-            textShadowColor: '#000',
-            textShadowBlur: 4
-          },
-          data: nodesData
-        }
-      ]
-    };
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isPanning && !draggedNodeId) return;
+
+    const dx = e.clientX - lastPointerRef.current.x;
+    const dy = e.clientY - lastPointerRef.current.y;
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
+
+    if (isPanning) {
+      setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    } else if (draggedNodeId) {
+      const adjustedDx = dx / scale;
+      const adjustedDy = dy / scale;
+
+      setNodes(prev => prev.map(n =>
+        n.id === draggedNodeId ? { ...n, x: n.x + adjustedDx, y: n.y + adjustedDy } : n
+      ));
+
+      setPaths(prev => prev.map(p => ({
+        ...p,
+        path: p.path.map(pt =>
+          pt.nodeId === draggedNodeId ? { ...pt, x: pt.x + adjustedDx, y: pt.y + adjustedDy } : pt
+        )
+      })));
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (isPanning) {
+      setIsPanning(false);
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    if (draggedNodeId) {
+      const node = nodes.find(n => n.id === draggedNodeId);
+      if (node) {
+        // Calculate current u, v from x, y
+        const dx = node.x - originX;
+        const dy = node.y - originY;
+        const A = dx / stepU_x;
+        const B = dy / stepU_y;
+        
+        // Snap to nearest 0.5 grid increment
+        const u = Math.round(((A + B) / 2) * 2) / 2;
+        const v = Math.round(((B - A) / 2) * 2) / 2;
+        
+        const snappedXY = getXY(u, v);
+
+        setNodes(prev => prev.map(n => 
+          n.id === draggedNodeId ? { ...n, x: snappedXY.x, y: snappedXY.y, u, v } : n
+        ));
+
+        setPaths(prev => prev.map(p => ({
+          ...p,
+          path: p.path.map(pt => 
+            pt.nodeId === draggedNodeId ? { ...pt, x: snappedXY.x, y: snappedXY.y } : pt
+          )
+        })));
+      }
+
+      setDraggedNodeId(null);
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  const getPathString = (path: {x: number, y: number}[]) => {
+    return path.map((pt, index) => `${index === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
   };
 
   return (
-    <>
-      <div className="fixed inset-0 z-0 pointer-events-auto">
-        {geoJsonLoaded ? (
-          <div 
-            className="absolute inset-0" 
-            style={{
-              transform: 'perspective(1200px) rotateX(45deg) scale(1.6) translateY(-5%)',
-              transformOrigin: 'center 50%',
-              transition: 'transform 0.5s ease-in-out'
-            }}
-          >
-            <ReactECharts
-              option={getOption()}
-              style={{ height: '100%', width: '100%' }}
-              opts={{ renderer: 'canvas' }}
-            />
-          </div>
-        ) : error ? (
-          <div className="absolute inset-0 flex items-center justify-center text-red-400">
-            {error}
-          </div>
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-cyan-400">
-            <Activity className="w-8 h-8 animate-pulse" />
-          </div>
-        )}
+    <div 
+      className={`absolute inset-0 overflow-hidden flex items-center justify-center pointer-events-auto ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`} 
+      ref={containerRef}
+      onPointerDown={handleBgPointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    >
+      <div 
+        className="relative" 
+        style={{ 
+          width: 1920, 
+          height: 1080, 
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+          transformOrigin: 'center center'
+        }}
+      >
+        {/* Isometric Grid Background */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          <defs>
+            <pattern id="iso-grid" width="220" height="110" patternUnits="userSpaceOnUse" patternTransform="translate(960, 150)">
+              <path d="M 110 0 L 220 55 L 110 110 L 0 55 Z" fill="none" stroke="#1a2b4c" strokeWidth="1" opacity="0.4"/>
+              <path d="M 0 55 L 220 55 M 110 0 L 110 110" fill="none" stroke="#1a2b4c" strokeWidth="0.5" opacity="0.2"/>
+            </pattern>
+          </defs>
+          
+          <rect width="100%" height="100%" fill="url(#iso-grid)" />
+
+          {/* Connection Lines */}
+          {paths.map((item, idx) => {
+            const d = getPathString(item.path);
+            let length = 0;
+            for(let i=1; i<item.path.length; i++) {
+               const p1 = item.path[i-1];
+               const p2 = item.path[i];
+               length += Math.hypot(p2.x - p1.x, p2.y - p1.y);
+            }
+            const dur = Math.max(3, length / 100);
+
+            return (
+              <g key={`path-${idx}`}>
+                {/* Glow */}
+                <path d={d} fill="none" stroke={item.color} strokeWidth="6" opacity="0.2" filter="blur(2px)" />
+                {/* Core */}
+                <path d={d} fill="none" stroke={item.color} strokeWidth="2" opacity="0.8" />
+                
+                {/* Animated Particles */}
+                <circle r="4" fill="#fff" filter={`drop-shadow(0 0 6px ${item.color})`}>
+                  <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={d} />
+                </circle>
+                <circle r="2" fill="#fff">
+                  <animateMotion dur={`${dur}s`} repeatCount="indefinite" path={d} begin={`${dur/2}s`} />
+                </circle>
+              </g>
+            );
+          })}
+        </svg>
+
+        {/* Nodes */}
+        {nodes.map((node) => {
+          let nodeScale = 1;
+          if (node.type === 'large') nodeScale = 1.2;
+          else if (node.type === 'medium') nodeScale = 1.0;
+          else nodeScale = 0.7;
+
+          return (
+            <div
+              key={`node-${node.id}`}
+              className={`absolute flex flex-col items-center justify-end pointer-events-auto transition-transform ${draggedNodeId === node.id ? 'scale-110 cursor-grabbing z-50' : 'hover:scale-110 cursor-grab'}`}
+              style={{
+                left: node.x,
+                top: node.y,
+                transform: `translate(-50%, -100%)`,
+                zIndex: draggedNodeId === node.id ? 1000 : Math.floor(node.y)
+              }}
+              onPointerDown={(e) => handleNodePointerDown(e, node.id)}
+            >
+              {/* Node Label */}
+              <div 
+                className="text-white font-medium text-center bg-[#0a0f1a]/90 px-4 py-2 rounded border border-cyan-500/40 shadow-[0_0_15px_rgba(0,242,254,0.2)] mb-2 select-none" 
+                style={{ 
+                  fontSize: '18px',
+                  lineHeight: '1.3',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                  letterSpacing: '1px',
+                  whiteSpace: 'nowrap',
+                  transform: 'translateZ(0)',
+                  backfaceVisibility: 'hidden',
+                  WebkitFontSmoothing: 'antialiased'
+                }}
+              >
+                {node.name}
+              </div>
+
+              {/* Node Image(s) */}
+              <div className="relative flex items-end justify-center pointer-events-none" style={{ transform: `scale(${nodeScale})`, transformOrigin: 'bottom center' }}>
+                {node.type === 'large' ? (
+                  <img src={largeNodeImg} style={{ width: '200px' }} draggable={false} />
+                ) : node.type === 'medium' ? (
+                  <img src={mediumNodeImg} style={{ width: '150px' }} draggable={false} />
+                ) : (
+                  <img src={smallNodeImg} style={{ width: '120px' }} draggable={false} />
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
       
       {/* Overlay gradient to blend edges */}
       <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_30%,#050505_100%)]"></div>
-    </>
+    </div>
   );
 }
